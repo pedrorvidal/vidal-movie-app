@@ -12,7 +12,7 @@ function MovieCard({ movie }) {
                             className="favorite-btn"
                             onClick={onFavoriteClick}
                         >
-                            &smallerthan; 3 Like
+                            &#9829; 3 Like
                         </button>
                     </div>
                 </div>
