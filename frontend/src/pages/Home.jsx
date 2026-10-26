@@ -1,49 +1,46 @@
 import MovieCard from '../components/MovieCard';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { searchMovies, getPopularMovies } from '../services/api';
+import '../css/Home.css';
 
 function Home() {
-    const movies = [
-        {
-            id: 1,
-            title: 'The Matrix',
-            release_date: '1999-03-31',
-            url: 'https://upload.wikimedia.org/wikipedia/en/d/db/The_Matrix.png',
-        },
-        {
-            id: 2,
-            title: 'Inception',
-            release_date: '2010-07-16',
-            url: 'https://upload.wikimedia.org/wikipedia/en/2/2e/Inception_%282010%29_theatrical_poster.jpg',
-        },
-        {
-            id: 3,
-            title: 'Interstellar',
-            release_date: '2014-11-07',
-            url: 'https://upload.wikimedia.org/wikipedia/en/b/bc/Interstellar_film_poster.jpg',
-        },
-        {
-            id: 4,
-            title: 'Tenet',
-            release_date: '2020-08-26',
-            url: 'https://upload.wikimedia.org/wikipedia/en/1/14/Tenet_movie_poster.jpg',
-        },
-        {
-            id: 5,
-            title: 'The Dark Knight',
-            release_date: '2008-07-18',
-            url: 'https://upload.wikimedia.org/wikipedia/en/1/1c/The_Dark_Knight_%282008_film%29.jpg',
-        },
-        {
-            id: 6,
-            title: 'Pulp Fiction',
-            release_date: '1994-10-14',
-            url: 'https://upload.wikimedia.org/wikipedia/en/3/3b/Pulp_Fiction_%281994%29_poster.jpg',
-        },
-    ];
+    const [movies, setMovies] = useState([]);
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(true);
+
     const [searchQuery, setSearchQuery] = useState('');
-    const handleSearch = (e) => {
+    const handleSearch = async (e) => {
         e.preventDefault();
+        if (!searchQuery.trim()) return;
+        if (loading) return;
+        setLoading(true);
+        try {
+            const searchResults = await searchMovies(searchQuery);
+            setMovies(searchResults);
+            setError(null);
+        } catch (error) {
+            console.log('Error searching for movies:', error);
+            setError('Failed to search for movies. Please try again later.');
+        } finally {
+            setLoading(false);
+        }
     };
+    useEffect(() => {
+        const loadPopularMovies = async () => {
+            try {
+                const popularMovies = await getPopularMovies();
+                setMovies(popularMovies);
+            } catch (error) {
+                console.error('Error fetching popular movies:', error);
+                setError(
+                    'Failed to fetch popular movies. Please try again later.',
+                );
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadPopularMovies();
+    }, []);
 
     return (
         <>
@@ -60,16 +57,21 @@ function Home() {
                         Search
                     </button>
                 </form>
-                <div className="movies-grid">
-                    {movies.map(
-                        (movie) =>
-                            movie.title
-                                .toLowerCase()
-                                .startsWith(searchQuery) && (
-                                <MovieCard key={movie.id} movie={movie} />
-                            ),
-                    )}
-                </div>
+                {error && <div className="error">{error}</div>}
+                {loading ? (
+                    <div className="loading">Loading...</div>
+                ) : (
+                    <div className="movies-grid">
+                        {movies.map(
+                            (movie) =>
+                                movie.title
+                                    .toLowerCase()
+                                    .startsWith(searchQuery) && (
+                                    <MovieCard key={movie.id} movie={movie} />
+                                ),
+                        )}
+                    </div>
+                )}
             </div>
         </>
     );
